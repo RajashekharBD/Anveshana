@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="css/destination.css">
+    <title>Destinations</title>
+</head>
+<body>
+    <div class="main">
+        <section class="destinations" id="destinations">
+            <h2 class="section-title">Popular Destinations</h2>
+                <!-- Filter Section -->
+    <section class="filter-section">
+        <div class="filter-container">
+            <div class="filter-group">
+                <label for="region" class="filter-label">Region</label>
+                <select id="region" class="filter-select">
+                    <option value="">All Regions</option>
+                    <option value="north">North India</option>
+                    <option value="south">South India</option>
+                    <option value="east">East India</option>
+                    <option value="west">West India</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="type" class="filter-label">Travel Type</label>
+                <select id="type" class="filter-select">
+                    <option value="">All Types</option>
+                    <option value="adventure">Adventure</option>
+                    <option value="cultural">Cultural</option>
+                    <option value="beach">Beach</option>
+                    <option value="hill-station">Hill Station</option>
+                    <option value="wildlife">Wildlife</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="season" class="filter-label">Best Season</label>
+                <select id="season" class="filter-select">
+                    <option value="">All Seasons</option>
+                    <option value="summer">Summer</option>
+                    <option value="winter">Winter</option>
+                    <option value="monsoon">Monsoon</option>
+                </select>
+            </div>
+            
+            <button class="filter-btn">Filter</button>
+        </div>
+    </section>
+            <div class="destinations-grid">
+                <div class="destination-card">
+                    <img src="images/destination/kashmir.avif" alt="Kashmir" class="destination-img">
+                    <div class="destination-overlay">
+                        <h3 class="destination-name">Kashmir</h3>
+                        <p class="destination-desc">Tropical paradise with lush jungles, volcanic mountains, and coral reefs.</p>
+                        <a href="info.php?pname=Kashmir" class="explore-btn">Explore</a>
+                    </div>
+                </div>
+                <div class="destination-card">
+                    <img src="images/destination/mysore.jpg" alt="Mysore" class="destination-img">
+                    <div class="destination-overlay">
+                        <h3 class="destination-name">Mysore</h3>
+                        <p class="destination-desc">The city of love, art, fashion, gastronomy, and culture.</p>
+                        <a href="info.php?pname=Mysore" class="explore-btn">Explore</a>
+                    </div>
+                </div>
+                <div class="destination-card">
+                    <img src="images/destination/manali.jpg" alt="Manali" class="destination-img">
+                    <div class="destination-overlay">
+                        <h3 class="destination-name">Manali</h3>
+                        <p class="destination-desc">Ultramodern meets traditional in this bustling metropolis.</p>
+                        <a href="info.php?pname=Manali" class="explore-btn">Explore</a>
+                    </div>
+                </div>
+                <div class="destination-card">
+                    <img src="images/destination/rajasthan.jpg" alt="Rajasthan" class="destination-img">
+                    <div class="destination-overlay">
+                        <h3 class="destination-name">Rajasthan</h3>
+                        <p class="destination-desc">The city that never sleeps with iconic landmarks and diverse culture.</p>
+                        <a href="info.php?pname=Rajasthan" class="explore-btn">Explore</a>
+                    </div>
+                </div>
+                <div class="destination-card">
+                    <img src="images/destination/delhi.jpg" alt="Delhi" class="destination-img">
+                    <div class="destination-overlay">
+                        <h3 class="destination-name">Delhi</h3>
+                        <p class="destination-desc">Stunning natural beauty with Table Mountain and pristine beaches.</p>
+                        <a href="info.php?pname=Delhi" class="explore-btn">Explore</a>
+                    </div>
+                </div>
+                <div class="destination-card">
+                    <img src="images/destination/kerala.jpg" alt="Kerala" class="destination-img">
+                    <div class="destination-overlay">
+                        <h3 class="destination-name">Kerala</h3>
+                        <p class="destination-desc">Vibrant harbor city with iconic Opera House and Bondi Beach.</p>
+                        <a href="info.php?pname=Kerala" class="explore-btn">Explore</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</body>
+</html>
