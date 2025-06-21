@@ -113,6 +113,57 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) 
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <style>
+        :root {
+            --primary: #ff6b6b;
+            --secondary: #5f27cd;
+            --danger: #ffb400;
+            --warning: #48dbfb;
+            --dark: #22223b;
+            --light: #f8f7ff;
+            --gray: #a1a1aa;
+            --gray-dark: #575366;
+            --success: #d1fae5;
+            --error: #fee2e2;
+        }
+        .admin-sidebar { background: linear-gradient(135deg, var(--primary), var(--secondary) 80%); color: #fff; padding: 1.5rem; width: 250px; box-shadow: 2px 0 18px rgba(95,39,205,0.10); min-height: 100vh; transition: background 0.3s; }
+        .sidebar-header { display: flex; align-items: center; margin-bottom: 2rem; }
+        .logo { font-size: 1.5rem; font-weight: 600; color: #fff; display: flex; align-items: center; }
+        .logo i { margin-right: 0.5rem; color: var(--secondary); }
+        .sidebar-menu a {
+            text-decoration: none;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            transition: color 0.3s;
+            padding: 0.5rem 0;
+            font-size: 1.08rem;
+            font-weight: 500;
+        }
+        .sidebar-menu a i {
+            margin-right: 0.75rem;
+            font-size: 1.2rem;
+        }
+        .sidebar-menu a.active,
+        .sidebar-menu a:active {
+            color: var(--primary);
+            background: #fff;
+            border-radius: 8px;
+            padding-left: 0.5rem;
+        }
+        .sidebar-menu a:hover {
+            color: var(--primary);
+            background: #fff;
+            border-radius: 8px;
+            padding-left: 0.5rem;
+        }
+        .active {
+            color: var(--primary) !important;
+            font-weight: 600;
+        }
+        .action-btns a { margin-right: 10px; color: #3498db; text-decoration: none; font-weight: 500; }
+        .action-btns a.delete { color: #e74c3c; }
+    </style>
+    <style>
         body {
             background: linear-gradient(120deg, #f8fafc 0%, #e0c3fc 100%);
             min-height: 100vh;
@@ -247,14 +298,60 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) 
                 </div>
             </div>
             <ul class="sidebar-menu">
-                <li><a href="admin.php"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
-                <li><a href="users.php"><i class="fas fa-users"></i><span>Users</span></a></li>
-                <li><a href="bookings.php"><i class="fas fa-calendar-check"></i><span>Bookings</span></a></li>
-                <li><a href="destination.php"><i class="fas fa-map-marked-alt"></i><span>Destinations</span></a></li>
-                <li><a href="#" class="active"><i class="fas fa-box"></i><span>Packages</span></a></li>
-                <li><a href="#"><i class="fas fa-comment-alt"></i><span>Feedback</span></a></li>
-                <li><a href="#"><i class="fas fa-cog"></i><span>Settings</span></a></li>
-                <li><a href="../logout.php"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+                <li>
+                    <a href="admin.php">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="users.php">
+                        <i class="fas fa-users"></i>
+                        <span>Users</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="bookings.php">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Bookings</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="destination.php">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Destinations</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="packages.php" class="active">
+                        <i class="fas fa-box"></i>
+                        <span>Packages</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="highlights.php">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Highlights</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="feedback.php">
+                        <i class="fas fa-comment-alt"></i>
+                        <span>Feedback</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="../logout.php">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </li>
             </ul>
         </aside>
         <!-- Main Content -->
@@ -357,9 +454,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) 
                                     </td>
                                     <td>₹<?= number_format($package['price'], 2) ?></td>
                                     <td><?= htmlspecialchars($package['description']) ?></td>
-                                    <td>
-                                        <a href="packages.php?action=edit&id=<?= $package['id'] ?>" class="btn btn-edit">Edit</a>
-                                        <a href="packages.php?action=delete&id=<?= $package['id'] ?>" class="btn btn-delete" onclick="return confirm('Are you sure you want to delete this package?');">Delete</a>
+                                    <td class="action-btns">
+                                        <a href="packages.php?action=edit&id=<?= $package['id'] ?>"><i class="fas fa-edit"></i> Edit</a>
+                                        <a href="packages.php?action=delete&id=<?= $package['id'] ?>" class="delete" onclick="return confirm('Are you sure you want to delete this package?');"><i class="fas fa-trash"></i> Delete</a>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

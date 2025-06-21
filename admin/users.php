@@ -43,6 +43,66 @@ if ($result) {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <style>
+        :root {
+            --primary: #ff6b6b;
+            --secondary: #5f27cd;
+            --danger: #ffb400;
+            --warning: #48dbfb;
+            --dark: #22223b;
+            --light: #f8f7ff;
+            --gray: #a1a1aa;
+            --gray-dark: #575366;
+            --success: #d1fae5;
+            --error: #fee2e2;
+        }
+        body {
+            background: linear-gradient(120deg, #f8fafc 0%, #e0c3fc 100%);
+            min-height: 100vh;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+        .admin-sidebar { background: linear-gradient(135deg, var(--primary), var(--secondary) 80%); color: #fff; padding: 1.5rem; width: 250px; box-shadow: 2px 0 18px rgba(95,39,205,0.10); min-height: 100vh; transition: background 0.3s; }
+        .sidebar-header { display: flex; align-items: center; margin-bottom: 2rem; }
+        .logo { font-size: 1.5rem; font-weight: 600; color: #fff; display: flex; align-items: center; }
+        .logo i { margin-right: 0.5rem; color: var(--secondary); }
+        .sidebar-menu a {
+            text-decoration: none;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            transition: color 0.3s;
+            padding: 0.5rem 0;
+            font-size: 1.08rem;
+            font-weight: 500;
+        }
+        .sidebar-menu a i {
+            margin-right: 0.75rem;
+            font-size: 1.2rem;
+        }
+        .sidebar-menu a.active,
+        .sidebar-menu a:active {
+            color: var(--primary);
+            background: #fff;
+            border-radius: 8px;
+            padding-left: 0.5rem;
+        }
+        .sidebar-menu a:hover {
+            color: var(--primary);
+            background: #fff;
+            border-radius: 8px;
+            padding-left: 0.5rem;
+        }
+        .active {
+            color: var(--primary) !important;
+            font-weight: 600;
+        }
+        .btn { padding: 0.85rem 2.2rem; background: linear-gradient(90deg, var(--primary), var(--secondary)); color: white; border: none; border-radius: 50px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 1.08rem; font-weight: 600; box-shadow: 0 4px 16px rgba(44,62,80,0.10); transition: background 0.3s, transform 0.2s; margin-top: 0.5rem; }
+        .btn:hover { background: linear-gradient(90deg, var(--secondary), var(--primary)); transform: translateY(-2px) scale(1.04); }
+        /* Properly add action-btns styles */
+        .action-btns a { margin-right: 10px; color: #3498db; text-decoration: none; font-weight: 500; }
+        .action-btns a.delete { color: #e74c3c; }
+    </style>
+    <style>
         .users-table {
             width: 100%;
             background: #fff;
@@ -146,7 +206,13 @@ if ($result) {
                     </a>
                 </li>
                 <li>
-                    <a href="#">
+                    <a href="highlights.php">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Highlights</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="feedback.php">
                         <i class="fas fa-comment-alt"></i>
                         <span>Feedback</span>
                     </a>
@@ -182,6 +248,7 @@ if ($result) {
                     <thead>
                         <tr>
                             <th>S.No.</th>
+                            <th>Avatar</th>
                             <th>Name</th>
                             <th>Email</th>
                             <th>Mobile</th>
@@ -192,42 +259,174 @@ if ($result) {
                         <?php $i = 1; foreach ($users as $user): ?>
                         <tr>
                             <td><?= $i++ ?></td>
+                            <td>
+                                <?php if (!empty($user['avatar'])): ?>
+                                    <img src="<?= htmlspecialchars($user['avatar']) ?>" alt="Avatar" style="width:38px;height:38px;border-radius:50%;object-fit:cover;box-shadow:0 2px 8px rgba(44,62,80,0.10);">
+                                <?php else: ?>
+                                    <span style="display:inline-block;width:38px;height:38px;border-radius:50%;background:#eee;text-align:center;line-height:38px;color:#aaa;font-size:1.2em;box-shadow:0 2px 8px rgba(44,62,80,0.10);"><i class="fas fa-user"></i></span>
+                                <?php endif; ?>
+                            </td>
                             <td><?= htmlspecialchars($user['name'] ?? $user['username'] ?? 'N/A') ?></td>
                             <td><?= htmlspecialchars($user['email'] ?? 'N/A') ?></td>
                             <td><?= htmlspecialchars($user['mobile'] ?? 'N/A') ?></td>
-                            <td>
-                                <a href="users.php?action=view&id=<?= $user['id'] ?>" class="btn btn-view">View</a>
-                                <a href="users.php?action=delete&id=<?= $user['id'] ?>" class="btn btn-delete" onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
+                            <td class="action-btns">
+                                <a href="users.php?id=<?= $user['id'] ?>" class="action-btns"><i class="fas fa-eye"></i> View</a>
+                                <a href="users.php?action=delete&id=<?= $user['id'] ?>" class="delete" onclick="return confirm('Delete this user?');"><i class="fas fa-trash"></i> Delete</a>
                             </td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
-            <?php
-            // View user details modal/section
-            if (isset($_GET['action']) && $_GET['action'] === 'view' && isset($_GET['id'])) {
+            <!-- User Details Overlay Modal -->
+            <?php if (isset($_GET['id'])): ?>
+                <?php
                 $id = intval($_GET['id']);
                 $result = $conn->query("SELECT * FROM users WHERE id = $id");
-                if ($result && $result->num_rows > 0) {
-                    $user = $result->fetch_assoc();
-                    echo '<div style="display:flex;justify-content:center;align-items:center;min-height:60vh;">';
-                    echo '<div style="background:#fff;border-radius:18px;box-shadow:0 4px 24px rgba(44,62,80,0.13);padding:2.5rem 2.5rem 2rem 2.5rem;max-width:370px;width:100%;text-align:center;">';
-                    if (!empty($user['avatar'])) {
-                        echo '<img src="' . htmlspecialchars($user['avatar']) . '" alt="Avatar" style="width:90px;height:90px;object-fit:cover;border-radius:50%;margin-bottom:1.2rem;border:3px solid #27cda7;background:#f8f8f8;">';
-                    } else {
-                        echo '<div style="width:90px;height:90px;border-radius:50%;background:#f8f8f8;border:3px solid #27cda7;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem auto;font-size:2.5rem;color:#bdbdbd;"><i class="fas fa-user"></i></div>';
-                    }
-                    echo '<h2 style="margin-bottom:0.5rem;font-size:1.5rem;font-weight:600;color:#222;">' . htmlspecialchars($user['name'] ?? $user['username'] ?? 'N/A') . '</h2>';
-                    echo '<div style="margin-bottom:1.1rem;color:#666;font-size:1.08rem;">' . htmlspecialchars($user['email'] ?? 'N/A') . '</div>';
-                    if (isset($user['mobile'])) echo '<div style="margin-bottom:1.1rem;color:#666;font-size:1.08rem;"><i class="fas fa-phone" style="margin-right:7px;color:#27cda7;"></i>' . htmlspecialchars($user['mobile']) . '</div>';
-                    if (isset($user['created_at'])) echo '<div style="margin-bottom:1.1rem;color:#888;font-size:0.98rem;"><i class="fas fa-calendar-alt" style="margin-right:7px;color:#c5cd2f;"></i>Joined: ' . htmlspecialchars($user['created_at']) . '</div>';
-                    echo '<a href="users.php" class="btn btn-edit" style="margin-top:1rem;background:#27cda7;color:#fff;padding:0.5rem 1.5rem;border-radius:30px;text-decoration:none;font-weight:500;">Close</a>';
-                    echo '</div>';
-                    echo '</div>';
+                $user = $result && $result->num_rows > 0 ? $result->fetch_assoc() : null;
+                ?>
+                <style>
+                body.modal-open { overflow: hidden; }
+                .user-modal-overlay {
+                    position: fixed;
+                    top: 0; left: 0; width: 100vw; height: 100vh;
+                    background: rgba(44,62,80,0.25);
+                    z-index: 1000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    animation: fadeInOverlay 0.2s;
                 }
-            }
-            ?>
+                @keyframes fadeInOverlay {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                .user-details-card {
+                    background: #fff;
+                    border-radius: 18px;
+                    box-shadow: 0 8px 32px rgba(44,62,80,0.18);
+                    padding: 0 1.2rem 1.2rem 1.2rem;
+                    max-width: 350px;
+                    width: 100%;
+                    text-align: left;
+                    position: relative;
+                    overflow: hidden;
+                    animation: fadeInCard 0.35s;
+                }
+                @keyframes fadeInCard {
+                    from { opacity: 0; transform: translateY(30px);}
+                    to { opacity: 1; transform: translateY(0);}
+                }
+                .user-details-header {
+                    background: linear-gradient(90deg, #ff6b6b, #5f27cd 90%);
+                    color: #fff;
+                    display: flex;
+                    align-items: center;
+                    padding: 1.1rem 1.2rem 0.7rem 1.2rem;
+                    margin: -1px -1.2rem 1.1rem -1.2rem;
+                    border-radius: 18px 18px 0 0;
+                    box-shadow: 0 2px 8px rgba(95,39,205,0.08);
+                }
+                .user-details-icon {
+                    background: #fff;
+                    color: #5f27cd;
+                    border-radius: 50%;
+                    width: 38px;
+                    height: 38px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.3rem;
+                    margin-right: 0.7rem;
+                    box-shadow: 0 2px 8px rgba(95,39,205,0.10);
+                }
+                .user-details-title {
+                    font-size: 1.18rem;
+                    font-weight: 600;
+                    color: #fff;
+                    letter-spacing: 0.01em;
+                }
+                .user-details-info {
+                    margin-top: 0.5rem;
+                }
+                .user-details-row {
+                    display: flex;
+                    align-items: flex-start;
+                    margin-bottom: 0.38rem;
+                    font-size: 1.01rem;
+                    color: #444;
+                }
+                .user-details-label {
+                    min-width: 110px;
+                    font-weight: 500;
+                    color: #5f27cd;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.4em;
+                }
+                .user-details-row i {
+                    color: #ff6b6b;
+                    font-size: 1em;
+                    margin-right: 0.3em;
+                }
+                .user-details-desc {
+                    color: #888;
+                    font-size: 0.98rem;
+                    margin-bottom: 0.2rem;
+                    align-items: flex-start;
+                }
+                .close-modal-btn {
+                    position: absolute;
+                    top: 12px; right: 16px;
+                    background: none;
+                    border: none;
+                    color: #5f27cd;
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                    z-index: 10;
+                    transition: color 0.2s;
+                }
+                .close-modal-btn:hover {
+                    color: #ff6b6b;
+                }
+                </style>
+                <div class="user-modal-overlay" id="userModalOverlay">
+                    <div class="user-details-card">
+                        <button class="close-modal-btn" onclick="closeUserModal()" title="Close"><i class="fas fa-times"></i></button>
+                        <div class="user-details-header">
+                            <span class="user-details-icon"><i class="fas fa-user"></i></span>
+                            <span class="user-details-title">User Details</span>
+                        </div>
+                        <?php if ($user): ?>
+                        <div class="user-details-info">
+                            <div class="user-details-row"><span class="user-details-label"><i class="fas fa-user"></i> Name:</span> <span><?= htmlspecialchars($user['name'] ?? 'N/A') ?></span></div>
+                            <div class="user-details-row"><span class="user-details-label"><i class="fas fa-envelope"></i> Email:</span> <span><?= htmlspecialchars($user['email'] ?? 'N/A') ?></span></div>
+                            <div class="user-details-row"><span class="user-details-label"><i class="fas fa-phone"></i> Mobile:</span> <span><?= htmlspecialchars($user['mobile'] ?? 'N/A') ?></span></div>
+                            <div class="user-details-row"><span class="user-details-label"><i class="fas fa-map-marker-alt"></i> Address:</span> <span><?= htmlspecialchars($user['address'] ?? 'N/A') ?></span></div>
+                            <div class="user-details-row user-details-desc"><span class="user-details-label"><i class="fas fa-calendar"></i> Registered:</span> <span><?= htmlspecialchars($user['created_at'] ?? 'N/A') ?></span></div>
+                        </div>
+                        <?php else: ?>
+                        <div class="user-details-info">User not found.</div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <script>
+                // Prevent background scroll when modal is open
+                document.body.classList.add('modal-open');
+                function closeUserModal() {
+                    document.body.classList.remove('modal-open');
+                    window.location.href = 'users.php';
+                }
+                // Close modal on ESC
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') closeUserModal();
+                });
+                // Close modal on click outside card
+                document.getElementById('userModalOverlay').addEventListener('click', function(e) {
+                    if (e.target === this) closeUserModal();
+                });
+                </script>
+            <?php endif; ?>
         </main>
     </div>
 </body>

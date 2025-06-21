@@ -695,61 +695,40 @@ footer {
     <!-- Destinations Section -->
     <section class="destinations" id="destinations">
         <h2 class="section-title">Popular Destinations</h2>
+        <?php
+        // DB connection for index.php
+        $db_host = 'localhost';
+        $db_user = 'root';
+        $db_pass = '';
+        $db_name = 'anveshana_admin';
+        $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+        if ($conn->connect_error) {
+            echo '<div style="color:#c00;text-align:center;">Database connection failed.</div>';
+        } else {
+            $sql = "SELECT name, highlight, cover_image FROM destinations ORDER BY id DESC LIMIT 6";
+            $result = $conn->query($sql);
+        ?>
         <div class="destinations-grid">
+            <?php
+            if ($result && $result->num_rows > 0):
+                $count = 0;
+                while ($row = $result->fetch_assoc()):
+                    if ($count >= 6) break;
+                    $img = !empty($row['cover_image']) ? 'admin/images/destination/' . htmlspecialchars($row['cover_image']) : 'images/destination/default.jpg';
+            ?>
             <div class="destination-card">
-                <img src="images/destination/kashmir.avif" alt="Kashmir" class="destination-img">
+                <img src="<?= $img ?>" alt="<?= htmlspecialchars($row['name']) ?>" class="destination-img">
                 <div class="destination-overlay">
-                    <h3 class="destination-name">Kashmir</h3>
-                    <p class="destination-desc">Tropical paradise with lush jungles, volcanic mountains, and coral reefs.</p>
-                    <a href="destination.html" class="explore-btn">Explore</a>
+                    <h3 class="destination-name"><?= htmlspecialchars($row['name']) ?></h3>
+                    <p class="destination-desc"><?= htmlspecialchars($row['highlight']) ?></p>
+                    <a href="destination.php?pname=<?= urlencode($row['name']) ?>" class="explore-btn">Explore</a>
                 </div>
             </div>
-            
-            <div class="destination-card">
-                <img src="images/destination/mysore.jpg" alt="Mysore" class="destination-img">
-                <div class="destination-overlay">
-                    <h3 class="destination-name">Mysore</h3>
-                    <p class="destination-desc">The city of love, art, fashion, gastronomy, and culture.</p>
-                    <a href="destination.html" class="explore-btn">Explore</a>
-                </div>
-            </div>
-            
-            <div class="destination-card">
-                <img src="images/destination/manali.jpg" alt="Manali" class="destination-img">
-                <div class="destination-overlay">
-                    <h3 class="destination-name">Manali</h3>
-                    <p class="destination-desc">Ultramodern meets traditional in this bustling metropolis.</p>
-                    <a href="destination.html" class="explore-btn">Explore</a>
-                </div>
-            </div>
-            
-            <div class="destination-card">
-                <img src="images/destination/rajasthan.jpg" alt="Rajasthan" class="destination-img">
-                <div class="destination-overlay">
-                    <h3 class="destination-name">Rajasthan</h3>
-                    <p class="destination-desc">The city that never sleeps with iconic landmarks and diverse culture.</p>
-                    <a href="destination.html" class="explore-btn">Explore</a>
-                </div>
-            </div>
-            
-            <div class="destination-card">
-                <img src="images/destination/delhi.jpg" alt="Delhi" class="destination-img">
-                <div class="destination-overlay">
-                    <h3 class="destination-name">Delhi</h3>
-                    <p class="destination-desc">Stunning natural beauty with Table Mountain and pristine beaches.</p>
-                    <a href="destination.html" class="explore-btn">Explore</a>
-                </div>
-            </div>
-            
-            <div class="destination-card">
-                <img src="images/destination/kerala.jpg" alt="Kerala" class="destination-img">
-                <div class="destination-overlay">
-                    <h3 class="destination-name">Kerala</h3>
-                    <p class="destination-desc">Vibrant harbor city with iconic Opera House and Bondi Beach.</p>
-                    <a href="destination.html" class="explore-btn">Explore</a>
-                </div>
-            </div>
+            <?php $count++; endwhile; else: ?>
+                <div style="grid-column:1/-1;text-align:center;color:#888;padding:2rem;">No destinations found.</div>
+            <?php endif; ?>
         </div>
+        <?php $conn->close(); } ?>
     </section>
     
     <!-- Testimonials Section -->

@@ -20,51 +20,80 @@ if ($conn->connect_error) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $_POST['name'] ?? '';
     $location = $_POST['location'] ?? '';
+    $highlight = $_POST['highlight'] ?? '';
     $description = $_POST['description'] ?? '';
     $price = $_POST['price'] ?? 0;
     $region = $_POST['region'] ?? '';
     $travel_type = $_POST['travel_type'] ?? '';
     $best_season = $_POST['best_season'] ?? '';
-    $images = [];
 
-    // Handle multiple file uploads
-    if (isset($_FILES['images']) && isset($_FILES['images']['name']) && is_array($_FILES['images']['name'])) {
+    // Handle cover image upload (single file)
+    $cover_image = '';
+    if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
         $targetDir = "images/destination/";
         if (!is_dir($targetDir)) {
             mkdir($targetDir, 0777, true);
         }
-        foreach ($_FILES['images']['name'] as $key => $imgName) {
-            if ($_FILES['images']['error'][$key] === UPLOAD_ERR_OK) {
+        $imgName = $_FILES['cover_image']['name'];
+        $imageFileType = strtolower(pathinfo($imgName, PATHINFO_EXTENSION));
+        $check = getimagesize($_FILES['cover_image']['tmp_name']);
+        if ($check !== false) {
+            $uniqueName = uniqid() . '.' . $imageFileType;
+            $targetFile = $targetDir . $uniqueName;
+            if (move_uploaded_file($_FILES['cover_image']['tmp_name'], $targetFile)) {
+                $cover_image = $uniqueName;
+            } else {
+                $error = "Sorry, there was an error uploading the cover image.";
+            }
+        } else {
+            $error = "Cover image is not a valid image.";
+        }
+    }
+
+    // Handle gallery images upload (multiple files)
+    $gallery_images = [];
+    if (isset($_FILES['gallery_images']) && isset($_FILES['gallery_images']['name']) && is_array($_FILES['gallery_images']['name'])) {
+        $targetDir = "images/destination/";
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+        foreach ($_FILES['gallery_images']['name'] as $key => $imgName) {
+            if ($_FILES['gallery_images']['error'][$key] === UPLOAD_ERR_OK) {
                 $imageFileType = strtolower(pathinfo($imgName, PATHINFO_EXTENSION));
-                $check = getimagesize($_FILES['images']['tmp_name'][$key]);
+                $check = getimagesize($_FILES['gallery_images']['tmp_name'][$key]);
                 if ($check !== false) {
                     $uniqueName = uniqid() . '.' . $imageFileType;
                     $targetFile = $targetDir . $uniqueName;
-                    if (move_uploaded_file($_FILES['images']['tmp_name'][$key], $targetFile)) {
-                        $images[] = $uniqueName;
+                    if (move_uploaded_file($_FILES['gallery_images']['tmp_name'][$key], $targetFile)) {
+                        $gallery_images[] = $uniqueName;
                     } else {
-                        $error = "Sorry, there was an error uploading one of the files.";
+                        $error = "Sorry, there was an error uploading one of the gallery images.";
                     }
                 } else {
-                    $error = "One of the files is not a valid image.";
+                    $error = "One of the gallery images is not a valid image.";
                 }
             }
         }
     }
-
-    $images_json = json_encode($images);
+    $gallery_json = json_encode($gallery_images);
 
     // If editing
     if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) {
         $id = intval($_GET['id']);
-        // If no new images uploaded, keep old images
-        if (empty($images)) {
-            $result = $conn->query("SELECT images FROM destinations WHERE id = $id");
+        // If no new cover image uploaded, keep old cover image
+        if (empty($cover_image)) {
+            $result = $conn->query("SELECT cover_image FROM destinations WHERE id = $id");
             $row = $result->fetch_assoc();
-            $images_json = $row['images'];
+            $cover_image = $row['cover_image'];
         }
-        $stmt = $conn->prepare("UPDATE destinations SET name=?, location=?, description=?, price=?, images=?, region=?, travel_type=?, best_season=? WHERE id=?");
-        $stmt->bind_param("ssssssssi", $name, $location, $description, $price, $images_json, $region, $travel_type, $best_season, $id);
+        // If no new gallery images uploaded, keep old gallery images
+        if (empty($gallery_images)) {
+            $result = $conn->query("SELECT gallery_images FROM destinations WHERE id = $id");
+            $row = $result->fetch_assoc();
+            $gallery_json = $row['gallery_images'];
+        }
+        $stmt = $conn->prepare("UPDATE destinations SET name=?, location=?, highlight=?, description=?, price=?, cover_image=?, gallery_images=?, region=?, travel_type=?, best_season=? WHERE id=?");
+        $stmt->bind_param("ssssssssssi", $name, $location, $highlight, $description, $price, $cover_image, $gallery_json, $region, $travel_type, $best_season, $id);
         if ($stmt->execute()) {
             header('Location: destination.php?success=updated');
             exit();
@@ -74,8 +103,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     } else {
         // Add new
-        $stmt = $conn->prepare("INSERT INTO destinations (name, location, description, price, images, region, travel_type, best_season) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssssssss", $name, $location, $description, $price, $images_json, $region, $travel_type, $best_season);
+        $stmt = $conn->prepare("INSERT INTO destinations (name, location, highlight, description, price, cover_image, gallery_images, region, travel_type, best_season) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssssssss", $name, $location, $highlight, $description, $price, $cover_image, $gallery_json, $region, $travel_type, $best_season);
         if ($stmt->execute()) {
             header('Location: destination.php?success=added');
             exit();
@@ -124,6 +153,60 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) 
     <link rel="stylesheet" href="css/style.css">
     <style>
         :root {
+            --primary: #ff6b6b;
+            --secondary: #5f27cd;
+            --danger: #ffb400;
+            --warning: #48dbfb;
+            --dark: #22223b;
+            --light: #f8f7ff;
+            --gray: #a1a1aa;
+            --gray-dark: #575366;
+            --success: #d1fae5;
+            --error: #fee2e2;
+        }
+        .admin-sidebar { background: linear-gradient(135deg, var(--primary), var(--secondary) 80%); color: #fff; padding: 1.5rem; width: 250px; box-shadow: 2px 0 18px rgba(95,39,205,0.10); min-height: 100vh; transition: background 0.3s; }
+        .sidebar-header { display: flex; align-items: center; margin-bottom: 2rem; }
+        .logo { font-size: 1.5rem; font-weight: 600; color: #fff; display: flex; align-items: center; }
+        .logo i { margin-right: 0.5rem; color: var(--secondary); }
+        .sidebar-menu a {
+            text-decoration: none;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            transition: color 0.3s;
+            padding: 0.5rem 0;
+            font-size: 1.08rem;
+            font-weight: 500;
+        }
+        .sidebar-menu a i {
+            margin-right: 0.75rem;
+            font-size: 1.2rem;
+        }
+        .sidebar-menu a.active,
+        .sidebar-menu a:active {
+            color: var(--primary);
+            background: #fff;
+            border-radius: 8px;
+            padding-left: 0.5rem;
+        }
+        .sidebar-menu a:hover {
+            color: var(--primary);
+            background: #fff;
+            border-radius: 8px;
+            padding-left: 0.5rem;
+        }
+        .active {
+            color: var(--primary) !important;
+            font-weight: 600;
+        }
+        .btn { padding: 0.85rem 2.2rem; background: linear-gradient(90deg, var(--primary), var(--secondary)); color: white; border: none; border-radius: 50px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 1.08rem; font-weight: 600; box-shadow: 0 4px 16px rgba(44,62,80,0.10); transition: background 0.3s, transform 0.2s; margin-top: 0.5rem; }
+        .btn:hover { background: linear-gradient(90deg, var(--secondary), var(--primary)); transform: translateY(-2px) scale(1.04); }
+        /* Properly add action-btns styles */
+        .action-btns a { margin-right: 10px; color: #3498db; text-decoration: none; font-weight: 500; }
+        .action-btns a.delete { color: #e74c3c; }
+    </style>
+    <style>
+        :root {
     --primary: #ff6b6b;         /* Vibrant Coral */
     --primary-dark: #f744ee;    /* Pinkish Purple */
     --secondary: #5f27cd;       /* Interactive Purple */
@@ -165,40 +248,19 @@ body {
     margin-bottom: 2rem;
 } */
 
-.logo {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #fff;
-    display: flex;
-    align-items: center;
-}
+    .logo {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #fff;
+        display: flex;
+        align-items: center;
+    }
 
-.logo i {
-    margin-right: 0.5rem;
-    color: var(--secondary);
-}
-
-.sidebar-menu a {
-    text-decoration: none;
-    color: #333;
-    display: flex;
-    align-items: center;
-    transition: color 0.3s;
-}
-
-.sidebar-menu a i {
-    margin-right: 0.75rem;
-    font-size: 1.2rem;
-}
-
-.sidebar-menu a:hover {
-    color: var(--primary);
-}
-
-.active {
-    color: var(--primary);
-    font-weight: 500;
-}
+    .logo i {
+        margin-right: 0.5rem;
+        color: var(--secondary);
+    }
+    /* Removed local .sidebar-menu a color so it inherits white from style.css */
 
 .admin-main {
     flex: 1;
@@ -501,13 +563,19 @@ input[type="file"]:hover::before {
                     </a>
                 </li>
                 <li>
-                    <a href="packages.php">
-                        <i class="fas fa-box"></i>
-                        <span>Packages</span>
-                    </a>
-                </li>
+                <a href="packages.php">
+                    <i class="fas fa-box"></i>
+                    <span>Packages</span>
+                </a>
+            </li>
+            <li>
+                <a href="highlights.php">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Highlights</span>
+                </a>
+            </li>
                 <li>
-                    <a href="#">
+                    <a href="feedback.php">
                         <i class="fas fa-comment-alt"></i>
                         <span>Feedback</span>
                     </a>
@@ -579,9 +647,16 @@ input[type="file"]:hover::before {
                             <label for="name">Destination Name</label>
                             <input type="text" id="name" name="name" class="form-control" required value="<?= htmlspecialchars($d['name'] ?? '') ?>">
                         </div>
+
+                        <!-- Location Section -->
                         <div class="form-group">
                             <label for="location">Location</label>
-                            <input type="text" id="location" name="location" class="form-control" required value="<?= htmlspecialchars($d['location'] ?? '') ?>">
+                            <input type="text" id="location" name="location" class="form-control" maxlength="255" value="<?= htmlspecialchars($d['location'] ?? '') ?>">
+                        </div>
+                        <!-- Highlight Section -->
+                        <div class="form-group">
+                            <label for="highlight">Highlight</label>
+                            <input type="text" id="highlight" name="highlight" class="form-control" maxlength="255" value="<?= htmlspecialchars($d['highlight'] ?? '') ?>">
                         </div>
                         <div class="form-group">
                             <label for="description">Description</label>
@@ -616,12 +691,23 @@ input[type="file"]:hover::before {
                             <input type="number" id="price" name="price" class="form-control" min="0" step="0.01" required value="<?= htmlspecialchars($d['price'] ?? '') ?>">
                         </div>
                         <div class="form-group">
-                            <label for="images">Destination Images</label>
+                            <label for="cover_image">Cover Image</label>
                             <div class="file-upload">
-                                <input type="file" id="images" name="images[]" accept="image/*" multiple <?= isset($_GET['action']) && $_GET['action'] === 'add' ? 'required' : '' ?>>
-                                <div id="imagePreviewContainer">
-                                    <?php if (isset($d['images']) && $d['images']): ?>
-                                        <?php foreach (json_decode($d['images'], true) as $img): ?>
+                                <input type="file" id="cover_image" name="cover_image" accept="image/*" <?= isset($_GET['action']) && $_GET['action'] === 'add' ? 'required' : '' ?>>
+                                <div id="coverImagePreviewContainer">
+                                    <?php if (isset($d['cover_image']) && $d['cover_image']): ?>
+                                        <img src="images/destination/<?= htmlspecialchars($d['cover_image']) ?>" class="file-upload-preview" style="display:inline-block;margin-right:10px;" />
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="gallery_images">Gallery Images</label>
+                            <div class="file-upload">
+                                <input type="file" id="gallery_images" name="gallery_images[]" accept="image/*" multiple>
+                                <div id="galleryImagePreviewContainer">
+                                    <?php if (isset($d['gallery_images']) && $d['gallery_images']): ?>
+                                        <?php foreach (json_decode($d['gallery_images'], true) as $img): ?>
                                             <img src="images/destination/<?= htmlspecialchars($img) ?>" class="file-upload-preview" style="display:inline-block;margin-right:10px;" />
                                         <?php endforeach; ?>
                                     <?php endif; ?>
@@ -641,9 +727,9 @@ input[type="file"]:hover::before {
                             <tr>
                                 <th>S.No.</th>
                                 <th>Name</th>
-                                <th>Location</th>
                                 <th>Price</th>
-                                <th>Images</th>
+                                <th>Cover</th>
+                                <th>Gallery</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -652,18 +738,22 @@ input[type="file"]:hover::before {
                                 <tr>
                                     <td><?= $i++ ?></td>
                                     <td><?= htmlspecialchars($dest['name']) ?></td>
-                                    <td><?= htmlspecialchars($dest['location']) ?></td>
                                     <td>₹<?= number_format($dest['price'], 2) ?></td>
                                     <td>
-                                        <?php if ($dest['images']): ?>
-                                            <?php foreach (json_decode($dest['images'], true) as $img): ?>
+                                        <?php if (!empty($dest['cover_image'])): ?>
+                                            <img src="images/destination/<?= htmlspecialchars($dest['cover_image']) ?>" class="table-img-thumb" />
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if (!empty($dest['gallery_images'])): ?>
+                                            <?php foreach (json_decode($dest['gallery_images'], true) as $img): ?>
                                                 <img src="images/destination/<?= htmlspecialchars($img) ?>" class="table-img-thumb" />
                                             <?php endforeach; ?>
                                         <?php endif; ?>
                                     </td>
-                                    <td>
-                                        <a href="destination.php?action=edit&id=<?= $dest['id'] ?>" class="btn btn-edit">Edit</a>
-                                        <a href="destination.php?action=delete&id=<?= $dest['id'] ?>" class="btn btn-delete" onclick="return confirm('Are you sure you want to delete this destination?');">Delete</a>
+                                    <td class="action-btns">
+                                        <a href="destination.php?action=edit&id=<?= $dest['id'] ?>"><i class="fas fa-edit"></i> Edit</a>
+                                        <a href="destination.php?action=delete&id=<?= $dest['id'] ?>" class="delete" onclick="return confirm('Are you sure you want to delete this destination?');"><i class="fas fa-trash"></i> Delete</a>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -676,8 +766,29 @@ input[type="file"]:hover::before {
 
     <script>
         // Multiple image preview functionality
-        document.getElementById('images').addEventListener('change', function(e) {
-            const container = document.getElementById('imagePreviewContainer');
+
+        // Cover image preview
+        document.getElementById('cover_image').addEventListener('change', function(e) {
+            const container = document.getElementById('coverImagePreviewContainer');
+            container.innerHTML = '';
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const img = document.createElement('img');
+                    img.src = ev.target.result;
+                    img.className = 'file-upload-preview';
+                    img.style.display = 'inline-block';
+                    img.style.marginRight = '10px';
+                    container.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Gallery images preview
+        document.getElementById('gallery_images').addEventListener('change', function(e) {
+            const container = document.getElementById('galleryImagePreviewContainer');
             container.innerHTML = '';
             const files = e.target.files;
             if (files) {

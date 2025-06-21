@@ -57,7 +57,7 @@ if (password_verify($password, $hashed_pass)) {
     $_SESSION['email'] = $email;
     $stmt->close();
     $conn->close();
-    header("Location: user/dashboard.html?login=success");
+    header("Location: dashboard.php?login=success");
     exit();
 } else {
     // Wrong password

@@ -14,6 +14,69 @@ session_start();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        :root {
+            --primary: #ff6b6b;
+            --secondary: #5f27cd;
+            --danger: #ffb400;
+            --warning: #495456ff;
+            --dark: #22223b;
+            --light: #f8f7ff;
+            --gray: #a1a1aa;
+            --gray-dark: #575366;
+            --success: #d1fae5;
+            --error: #fee2e2;
+        }
+        body {
+            background: linear-gradient(120deg, #f8fafc 0%, #e0c3fc 100%);
+            min-height: 100vh;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+        
+        .admin-sidebar {     background: linear-gradient(135deg, var(--primary), var(--secondary) 80%);
+    color: #fff;
+    padding: 1.5rem;
+    width: 250px;
+    box-shadow: 2px 0 18px rgba(95,39,205,0.10);
+    min-height: 100vh;
+    transition: background 0.3s;
+}
+        .sidebar-header { display: flex; align-items: center; margin-bottom: 2rem; }
+        .logo { font-size: 1.5rem; font-weight: 600; color: #fff; display: flex; align-items: center; }
+        .logo i { margin-right: 0.5rem; color: var(--secondary); }
+        .sidebar-menu a {
+            text-decoration: none;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            transition: color 0.3s;
+            padding: 0.5rem 0;
+            font-size: 1.08rem;
+            font-weight: 500;
+        }
+        .sidebar-menu a i {
+            margin-right: 0.75rem;
+            font-size: 1.2rem;
+        }
+        .sidebar-menu a.active,
+        .sidebar-menu a:active {
+            color: var(--primary);
+            background: #fff;
+            border-radius: 8px;
+            padding-left: 0.5rem;
+        }
+        .sidebar-menu a:hover {
+            color: var(--primary);
+            background: #fff;
+            border-radius: 8px;
+            padding-left: 0.5rem;
+        }
+        .active {
+            color: var(--primary) !important;
+            font-weight: 600;
+        }
+    </style>
 </head>
 <body>
     <div class="admin-container">
@@ -52,11 +115,17 @@ session_start();
                     </a>
                 </li>
                 <li>
-                    <a href="packages.php">
-                        <i class="fas fa-box"></i>
-                        <span>Packages</span>
-                    </a>
-                </li>
+                <a href="packages.php">
+                    <i class="fas fa-box"></i>
+                    <span>Packages</span>
+                </a>
+            </li>
+            <li>
+                <a href="highlights.php">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Highlights</span>
+                </a>
+            </li>
                 <li>
                     <a href="#">
                         <i class="fas fa-comment-alt"></i>
@@ -96,64 +165,72 @@ session_start();
             </header>
             
             <!-- Stats Cards -->
+            <?php
+            // Fetch dashboard stats from DB
+            $db_host = 'localhost';
+            $db_user = 'root';
+            $db_pass = '';
+            $db_name = 'anveshana_admin';
+            $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+            $total_users = 0;
+            $todays_bookings = 0;
+            $total_revenue = 0;
+            $pending_requests = 0;
+            if (!$conn->connect_error) {
+                // Total users
+                $res = $conn->query("SELECT COUNT(*) as cnt FROM users");
+                if ($res && $row = $res->fetch_assoc()) $total_users = $row['cnt'];
+                // Today's bookings
+                $today = date('Y-m-d');
+                $res = $conn->query("SELECT COUNT(*) as cnt FROM bookings WHERE DATE(created_at) = '$today'");
+                if ($res && $row = $res->fetch_assoc()) $todays_bookings = $row['cnt'];
+                // Total revenue
+                $res = $conn->query("SELECT SUM(total_price) as sum FROM bookings");
+                if ($res && $row = $res->fetch_assoc()) $total_revenue = $row['sum'] ? $row['sum'] : 0;
+                // Pending requests (example: bookings with a 'pending' status if you have such a column)
+                $pending_requests = 0; // Update this if you have a status column
+                $conn->close();
+            }
+            ?>
             <div class="stats-grid">
                 <div class="stat-card users animate-fadeIn">
                     <div class="stat-header">
                         <div>
-                            <div class="stat-value">1,248</div>
+                            <div class="stat-value"><?= number_format($total_users) ?></div>
                             <div class="stat-title">Total Users</div>
-                            <div class="stat-change positive">
-                                <i class="fas fa-arrow-up"></i>
-                                <span>12.5% from last month</span>
-                            </div>
                         </div>
                         <div class="stat-icon">
                             <i class="fas fa-users"></i>
                         </div>
                     </div>
                 </div>
-                
                 <div class="stat-card bookings animate-fadeIn delay-100">
                     <div class="stat-header">
                         <div>
-                            <div class="stat-value">326</div>
+                            <div class="stat-value"><?= number_format($todays_bookings) ?></div>
                             <div class="stat-title">Today's Bookings</div>
-                            <div class="stat-change positive">
-                                <i class="fas fa-arrow-up"></i>
-                                <span>8.3% from yesterday</span>
-                            </div>
                         </div>
                         <div class="stat-icon">
                             <i class="fas fa-calendar-check"></i>
                         </div>
                     </div>
                 </div>
-                
                 <div class="stat-card revenue animate-fadeIn delay-200">
                     <div class="stat-header">
                         <div>
-                            <div class="stat-value">$24,560</div>
+                            <div class="stat-value">₹<?= number_format($total_revenue, 2) ?></div>
                             <div class="stat-title">Total Revenue</div>
-                            <div class="stat-change positive">
-                                <i class="fas fa-arrow-up"></i>
-                                <span>22.1% from last month</span>
-                            </div>
                         </div>
                         <div class="stat-icon">
                             <i class="fas fa-dollar-sign"></i>
                         </div>
                     </div>
                 </div>
-                
                 <div class="stat-card pending animate-fadeIn delay-300">
                     <div class="stat-header">
                         <div>
-                            <div class="stat-value">18</div>
+                            <div class="stat-value"><?= number_format($pending_requests) ?></div>
                             <div class="stat-title">Pending Requests</div>
-                            <div class="stat-change negative">
-                                <i class="fas fa-arrow-down"></i>
-                                <span>2.4% from yesterday</span>
-                            </div>
                         </div>
                         <div class="stat-icon">
                             <i class="fas fa-clock"></i>
@@ -163,34 +240,60 @@ session_start();
             </div>
             
             <!-- Charts Section -->
-            <div class="charts-grid">
-                <div class="chart-card animate-fadeIn delay-200">
+            <div class="charts-grid" style="display: flex; justify-content: center; align-items: flex-start;">
+                <div class="chart-card animate-fadeIn delay-200" style="min-width: 400px; max-width: 800px; width: 100%; margin: 0 auto;">
                     <div class="chart-header">
                         <h3 class="chart-title">Booking Trends</h3>
                         <div class="chart-actions">
-                            <button title="Daily"><i class="fas fa-calendar-day"></i></button>
-                            <button title="Weekly"><i class="fas fa-calendar-week"></i></button>
-                            <button title="Monthly" class="active"><i class="fas fa-calendar-alt"></i></button>
-                            <button title="Yearly"><i class="fas fa-calendar"></i></button>
+                            <button title="Daily" id="trend-daily" class="active"><i class="fas fa-calendar-day"></i></button>
                         </div>
                     </div>
-                    <div class="chart-placeholder">
-                        <span>Monthly booking chart will be displayed here</span>
-                    </div>
-                </div>
-                
-                <div class="chart-card animate-fadeIn delay-300">
-                    <div class="chart-header">
-                        <h3 class="chart-title">User Demographics</h3>
-                        <div class="chart-actions">
-                            <button title="Age"><i class="fas fa-user-friends"></i></button>
-                            <button title="Location"><i class="fas fa-map-marker-alt"></i></button>
-                            <button title="Device" class="active"><i class="fas fa-mobile-alt"></i></button>
-                        </div>
-                    </div>
-                    <div class="chart-placeholder">
-                        <span>User device distribution chart will be displayed here</span>
-                    </div>
+                    <canvas id="bookingTrendsChart" height="120"></canvas>
+                    <?php
+                    // Get last 7 days booking counts
+                    $db_host = 'localhost';
+                    $db_user = 'root';
+                    $db_pass = '';
+                    $db_name = 'anveshana_admin';
+                    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+                    $labels = [];
+                    $counts = [];
+                    if (!$conn->connect_error) {
+                        for ($i = 6; $i >= 0; $i--) {
+                            $date = date('Y-m-d', strtotime("-$i days"));
+                            $labels[] = date('D', strtotime($date));
+                            $sql = "SELECT COUNT(*) as cnt FROM bookings WHERE DATE(created_at) = '$date'";
+                            $res = $conn->query($sql);
+                            $cnt = 0;
+                            if ($res && $row = $res->fetch_assoc()) $cnt = $row['cnt'];
+                            $counts[] = $cnt;
+                        }
+                        $conn->close();
+                    }
+                    ?>
+                    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                    <script>
+                    const bookingTrendsCtx = document.getElementById('bookingTrendsChart').getContext('2d');
+                    new Chart(bookingTrendsCtx, {
+                        type: 'line',
+                        data: {
+                            labels: <?php echo json_encode($labels); ?>,
+                            datasets: [{
+                                label: 'Bookings',
+                                data: <?php echo json_encode($counts); ?>,
+                                borderColor: '#5f27cd',
+                                backgroundColor: 'rgba(95,39,205,0.1)',
+                                fill: true,
+                                tension: 0.3
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true, precision: 0 } }
+                        }
+                    });
+                    </script>
                 </div>
             </div>
             
@@ -198,38 +301,92 @@ session_start();
             <div class="activity-card animate-fadeIn delay-400">
                 <h3 class="chart-title">Recent Activity</h3>
                 <ul class="activity-list">
-                    <li class="activity-item">
-                        <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="User" class="activity-avatar">
-                        <div class="activity-content">
-                            <div class="activity-user">Sarah Johnson</div>
-                            <div class="activity-action">Booked a trip to Bali for 2 adults</div>
-                            <div class="activity-time">10 minutes ago</div>
-                        </div>
-                    </li>
-                    <li class="activity-item">
-                        <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="User" class="activity-avatar">
-                        <div class="activity-content">
-                            <div class="activity-user">Michael Chen</div>
-                            <div class="activity-action">Left a 5-star review for Paris tour</div>
-                            <div class="activity-time">25 minutes ago</div>
-                        </div>
-                    </li>
-                    <li class="activity-item">
-                        <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="User" class="activity-avatar">
-                        <div class="activity-content">
-                            <div class="activity-user">Emma Wilson</div>
-                            <div class="activity-action">Created a new account</div>
-                            <div class="activity-time">1 hour ago</div>
-                        </div>
-                    </li>
-                    <li class="activity-item">
-                        <img src="https://randomuser.me/api/portraits/men/41.jpg" alt="User" class="activity-avatar">
-                        <div class="activity-content">
-                            <div class="activity-user">David Kim</div>
-                            <div class="activity-action">Cancelled booking #45821</div>
-                            <div class="activity-time">2 hours ago</div>
-                        </div>
-                    </li>
+                <?php
+                // Show latest 5 activities: signups (users), logins (if tracked), bookings
+                $db_host = 'localhost';
+                $db_user = 'root';
+                $db_pass = '';
+                $db_name = 'anveshana_admin';
+                $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+                if (!$conn->connect_error) {
+                    // Fetch signups (users) and bookings, merge and sort by time
+                    $signup_sql = "SELECT name, email, created_at, 'signup' as type FROM users";
+                    $booking_sql = "SELECT name, package_name, destination_name, people, created_at, 'booking' as type FROM bookings";
+                    $signup_res = $conn->query($signup_sql);
+                    $booking_res = $conn->query($booking_sql);
+                    $activities = [];
+                    if ($signup_res) {
+                        while ($row = $signup_res->fetch_assoc()) {
+                            $activities[] = [
+                                'type' => 'signup',
+                                'name' => $row['name'],
+                                'email' => $row['email'],
+                                'created_at' => $row['created_at']
+                            ];
+                        }
+                    }
+                    if ($booking_res) {
+                        while ($row = $booking_res->fetch_assoc()) {
+                            $activities[] = [
+                                'type' => 'booking',
+                                'name' => $row['name'],
+                                'package_name' => $row['package_name'],
+                                'destination_name' => $row['destination_name'],
+                                'people' => $row['people'],
+                                'created_at' => $row['created_at']
+                            ];
+                        }
+                    }
+                    // Sort all activities by created_at desc
+                    usort($activities, function($a, $b) {
+                        return strtotime($b['created_at']) - strtotime($a['created_at']);
+                    });
+                    $activities = array_slice($activities, 0, 5);
+                    if (count($activities) > 0) {
+                        foreach ($activities as $act) {
+                            $user_avatar = 'https://randomuser.me/api/portraits/lego/1.jpg';
+                            $created_at = $act['created_at'];
+                            // Use Asia/Kolkata timezone for both now and created_at
+                            $now = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
+                            $created = new DateTime($created_at, new DateTimeZone('Asia/Kolkata'));
+                            $diff = $now->getTimestamp() - $created->getTimestamp();
+                            if ($diff < 0) {
+                                $time_ago = 'just now';
+                            } elseif ($diff < 60) {
+                                $time_ago = $diff . ' second' . ($diff == 1 ? '' : 's') . ' ago';
+                            } elseif ($diff < 3600) {
+                                $mins = floor($diff/60);
+                                $time_ago = $mins . ' minute' . ($mins == 1 ? '' : 's') . ' ago';
+                            } elseif ($diff < 86400) {
+                                $hrs = floor($diff/3600);
+                                $time_ago = $hrs . ' hour' . ($hrs == 1 ? '' : 's') . ' ago';
+                            } else {
+                                $days = floor($diff/86400);
+                                $time_ago = $days . ' day' . ($days == 1 ? '' : 's') . ' ago';
+                            }
+                            echo '<li class="activity-item">';
+                            echo '<img src="' . htmlspecialchars($user_avatar) . '" alt="User" class="activity-avatar">';
+                            echo '<div class="activity-content">';
+                            echo '<div class="activity-user">' . htmlspecialchars($act['name']) . '</div>';
+                            if ($act['type'] === 'signup') {
+                                echo '<div class="activity-action">Signed up with email <b>' . htmlspecialchars($act['email']) . '</b></div>';
+                            } elseif ($act['type'] === 'booking') {
+                                $package = $act['package_name'] ? $act['package_name'] : ($act['destination_name'] ?? '');
+                                $people = $act['people'] ?? 1;
+                                echo '<div class="activity-action">Booked <b>' . htmlspecialchars($package) . '</b> for ' . intval($people) . ' ' . (intval($people) > 1 ? 'people' : 'person') . '</div>';
+                            }
+                            echo '<div class="activity-time">' . $time_ago . '</div>';
+                            echo '</div>';
+                            echo '</li>';
+                        }
+                    } else {
+                        echo '<li class="activity-item"><div class="activity-content">No recent activity found.</div></li>';
+                    }
+                    $conn->close();
+                } else {
+                    echo '<li class="activity-item"><div class="activity-content">Could not connect to database.</div></li>';
+                }
+                ?>
                 </ul>
             </div>
             
